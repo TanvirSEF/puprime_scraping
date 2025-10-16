@@ -4,14 +4,14 @@ A comprehensive web scraper for PU Prime IB Portal that extracts account data an
 
 ## Features
 
-- ✅ **Account Report Scraping**: Extracts date, user ID, account number, name, and email from the Account Report page
-- ✅ **Pagination Support**: Automatically handles multiple pages of data
-- ✅ **MongoDB Integration**: Stores scraped data in MongoDB with proper indexing
-- ✅ **Incremental Sync**: Only processes new records since the last sync
-- ✅ **Scheduled Sync**: Automatically runs sync operations at configurable intervals
-- ✅ **Anti-Detection**: Uses undetected-chromedriver and stealth techniques
-- ✅ **Error Handling**: Comprehensive error handling and logging
-- ✅ **Command Line Interface**: Easy-to-use CLI with multiple operation modes
+- **Account Report Scraping**: Extracts date, user ID, account number, name, and email from the Account Report page
+- **Pagination Support**: Automatically handles multiple pages of data
+- **MongoDB Integration**: Stores scraped data in MongoDB with proper indexing
+- **Incremental Sync**: Only processes new records since the last sync
+- **Scheduled Sync**: Automatically runs sync operations at configurable intervals
+- **Anti-Detection**: Uses undetected-chromedriver and stealth techniques
+- **Error Handling**: Comprehensive error handling and logging
+- **Command Line Interface**: Easy-to-use CLI with multiple operation modes
 
 ## Installation
 

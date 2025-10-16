@@ -1540,8 +1540,8 @@ if __name__ == '__main__':
     
     def main():
         parser = argparse.ArgumentParser(description='PU Prime Account Scraper')
-        parser.add_argument('--email', required=True, help='Login email')
-        parser.add_argument('--password', required=True, help='Login password')
+        parser.add_argument('--email', help='Login email (can also be set via PUPRIME_EMAIL env var)')
+        parser.add_argument('--password', help='Login password (can also be set via PUPRIME_PASSWORD env var)')
         parser.add_argument('--mongodb-uri', help='MongoDB connection string (default: mongodb://localhost:27017/)')
         parser.add_argument('--mode', choices=['full', 'incremental', 'scheduled'], default='full',
                           help='Sync mode: full (all data), incremental (new data only), scheduled (continuous)')
@@ -1549,6 +1549,19 @@ if __name__ == '__main__':
         parser.add_argument('--headless', action='store_true', help='Run browser in headless mode')
         
         args = parser.parse_args()
+        
+        # Get credentials from command line args or environment variables
+        email = args.email or os.getenv('PUPRIME_EMAIL')
+        password = args.password or os.getenv('PUPRIME_PASSWORD')
+        
+        # Validate that we have credentials
+        if not email or not password:
+            logger.log('ERROR', 'Email and password are required!')
+            logger.log('INFO', 'Provide them via:')
+            logger.log('INFO', '  1. Command line: --email your@email.com --password yourpassword')
+            logger.log('INFO', '  2. Environment variables: PUPRIME_EMAIL and PUPRIME_PASSWORD')
+            logger.log('INFO', '  3. .env file: Create .env file with PUPRIME_EMAIL and PUPRIME_PASSWORD')
+            sys.exit(1)
         
         logger = SimpleLogger()
         
@@ -1558,8 +1571,8 @@ if __name__ == '__main__':
                 logger.log('INFO', 'Starting scheduled sync service')
                 sync_manager = ScheduledSyncManager(
                     logger=logger,
-                    email=args.email,
-                    password=args.password,
+                    email=email,
+                    password=password,
                     mongodb_uri=args.mongodb_uri,
                     sync_interval_hours=args.interval,
                     headless=args.headless
@@ -1570,8 +1583,8 @@ if __name__ == '__main__':
                 # Run single sync operation
                 scraper = PUPrimeAccountScraper(
                     logger=logger,
-                    email=args.email,
-                    password=args.password,
+                    email=email,
+                    password=password,
                     mongodb_uri=args.mongodb_uri,
                     headless=args.headless
                 )
@@ -1582,7 +1595,7 @@ if __name__ == '__main__':
                     result = scraper.run_incremental_sync()
                 
                 if result['status'] == 'success':
-                    logger.log('INFO', f"✅ Sync completed successfully!")
+                    logger.log('INFO', f"Sync completed successfully!")
                     logger.log('INFO', f"Records scraped: {result['records_scraped']}")
                     logger.log('INFO', f"Records processed: {result['records_processed']}")
                     logger.log('INFO', f"Total in database: {result['total_in_db']}")
@@ -1590,17 +1603,17 @@ if __name__ == '__main__':
                     if 'new_records_found' in result:
                         logger.log('INFO', f"New records found: {result['new_records_found']}")
                 else:
-                    logger.log('ERROR', f"❌ Sync failed: {result['error']}")
+                    logger.log('ERROR', f"Sync failed: {result['error']}")
                     sys.exit(1)
                     
         except KeyboardInterrupt:
             logger.log('INFO', 'Operation cancelled by user')
         except Exception as e:
-            logger.log('ERROR', f"❌ Error: {str(e)}")
+            logger.log('ERROR', f"Error: {str(e)}")
             
             # Check if we need to install dependencies
             if "No module named" in str(e) or "ModuleNotFoundError" in str(e):
-                logger.log('INFO', "\n📦 Please install required packages:")
+                logger.log('INFO', "\nPlease install required packages:")
                 logger.log('INFO', "pip install -r requirements.txt")
                 logger.log('INFO', "\nOr install individually:")
                 logger.log('INFO', "pip install selenium pymongo schedule python-dotenv")
@@ -1613,31 +1626,36 @@ if __name__ == '__main__':
         # Default behavior - run with hardcoded credentials in scheduled mode (every hour)
         logger = SimpleLogger()
         
-        logger.log('INFO', '🚀 Starting PU Prime Scraper in scheduled mode')
-        logger.log('INFO', '📅 Will scrape every 1 hour automatically')
-        logger.log('INFO', '⏹️  Press Ctrl+C to stop the scheduler')
+        logger.log('INFO', 'Starting PU Prime Scraper in scheduled mode')
+        logger.log('INFO', 'Will scrape every 1 hour automatically')
+        logger.log('INFO', 'Press Ctrl+C to stop the scheduler')
         logger.log('INFO', '')
-        logger.log('INFO', 'Using hardcoded credentials for automatic operation')
+        logger.log('INFO', 'Legacy mode - using credentials from environment variables')
         logger.log('INFO', 'For custom settings, use command line arguments:')
         logger.log('INFO', 'python puprime.py --email your@email.com --password yourpassword --mode scheduled --interval 1')
         logger.log('INFO', '')
         
-        try:
-            # Start scheduled sync service with 1-hour interval
-            sync_manager = ScheduledSyncManager(
-                logger=logger,
-                email='zebb@kumrif.com',
-                password='!Vinnaren1989!',
-                mongodb_uri=None,  # Use default MongoDB connection
-                sync_interval_hours=1,  # Every 1 hour
-                headless=True  # Run in headless mode for background operation
-            )
-            sync_manager.start_scheduled_sync()
-            
-        except KeyboardInterrupt:
-            logger.log('INFO', '🛑 Scheduler stopped by user')
-        except Exception as e:
-            logger.log('ERROR', f"❌ Error: {str(e)}")
+        # Try to get credentials from environment variables
+        email = os.getenv('PUPRIME_EMAIL')
+        password = os.getenv('PUPRIME_PASSWORD')
+        
+        if not email or not password:
+            logger.log('ERROR', 'Credentials not found!')
+            logger.log('INFO', 'Please provide credentials via:')
+            logger.log('INFO', '  1. Command line: python puprime.py --email your@email.com --password yourpassword --mode scheduled')
+            logger.log('INFO', '  2. Environment variables: Set PUPRIME_EMAIL and PUPRIME_PASSWORD')
+            logger.log('INFO', '  3. .env file: Create .env file with PUPRIME_EMAIL and PUPRIME_PASSWORD')
             sys.exit(1)
+        
+        # Start scheduled sync service with 1-hour interval
+        sync_manager = ScheduledSyncManager(
+            logger=logger,
+            email=email,
+            password=password,
+            mongodb_uri=None,  # Use default MongoDB connection
+            sync_interval_hours=1,  # Every 1 hour
+            headless=True  # Run in headless mode for background operation
+        )
+        sync_manager.start_scheduled_sync()
     else:
         main()
